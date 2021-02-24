@@ -20,8 +20,49 @@ typedef void(__stdcall* D3D11CreateQueryHook) (ID3D11Device* pDevice, const D3D1
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK DXGIMsgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) { return DefWindowProc(hwnd, uMsg, wParam, lParam); }
 
+// JS Related
+enum MemoryAddresses {
+	RunFileInternalAddr = 0x35A50,
+	LoadSystemFileInternalAddr = 0x34910,
+	V8Instance = 0x72988,
+};
+
+uint64_t citizenV8Base = (uint64_t)((DWORD64)GetModuleHandleA("citizen-scripting-v8.dll"));
+uint64_t grabbedClass;
+
+using RunFileInternal_t = int(*)(uint64_t, char*, std::function<int(char*, uint64_t)>);
+using LoadSystemFileInternal_t = int(*)(uint64_t, char*, uint64_t);
+
+auto RunFileInternal = (RunFileInternal_t)(citizenV8Base + MemoryAddresses::RunFileInternalAddr);
+auto CitizenFX_LoadSystemFileInternal = (LoadSystemFileInternal_t)(citizenV8Base + MemoryAddresses::LoadSystemFileInternalAddr);
+
+// Other namespace
 namespace Cheats
 {
+	int LoadSystemFileInternal(uint64_t destination, char* scriptFile, uint64_t outScript) {
+		return CitizenFX_LoadSystemFileInternal(destination, scriptFile, outScript);
+	}
+
+	int LoadSystemFile(uint64_t destination, char* scriptFile) {
+		return RunFileInternal(destination, scriptFile, std::bind(&LoadSystemFileInternal, destination, std::placeholders::_1, std::placeholders::_2));
+	}
+
+	void runFile(std::string file) {
+		LoadSystemFile(grabbedClass, const_cast<char*>(file.c_str()));
+	}
+
+	void init() {
+		std::thread([&]() {
+			while (true) {
+				std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+				uint64_t currentClass = *(uint64_t*)(citizenV8Base + MemoryAddresses::V8Instance);
+				if (currentClass != NULL)
+					grabbedClass = currentClass;
+			}
+			}).detach();
+	}
+
 	string RandomString(int lenght)
 	{
 		string str("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
@@ -213,6 +254,7 @@ namespace GUI
 		}
 		else if (selected_tab == 2)
 		{
+			Cheats::init();
 			auto size = ImGui::GetWindowSize();
 			bool selected = (current_resource == "_cfx_internal");
 
