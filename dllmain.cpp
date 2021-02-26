@@ -214,7 +214,6 @@ namespace GUI
 		}
 		else if (selected_tab == 2)
 		{
-			Cheats::init();
 			auto size = ImGui::GetWindowSize();
 			bool selected = (current_resource == "_cfx_internal");
 
