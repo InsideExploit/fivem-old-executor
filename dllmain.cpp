@@ -366,6 +366,17 @@ namespace D3DHook
 			pSwapChain->GetDesc(&swpchainDesc);
 			ImGui::CreateContext();
 			ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantTextInput || ImGui::GetIO().WantCaptureKeyboard;
+			
+			static const ImWchar icons_ranges[] = { 0xf000, 0xf3ff, 0 };
+			ImFontConfig icons_config;
+			icons_config.MergeMode = true;
+			icons_config.PixelSnapH = true;
+			icons_config.OversampleH = (int)2.5;
+			icons_config.OversampleV = (int)2.5;
+
+			ImGui::GetIO().Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\verdana.ttf", 16);
+			ImGui::GetIO().Fonts->AddFontFromMemoryCompressedTTF(font_awesome_data, font_awesome_size, 16.0f, &icons_config, icons_ranges);
+			
 			window = swpchainDesc.OutputWindow;
 
 			handler = (WNDPROC)SetWindowLongPtr(window, GWLP_WNDPROC, (LONG_PTR)HookHWND);
@@ -450,15 +461,6 @@ namespace D3DHook
 			pContext->OMSetRenderTargets(1, &RenderTargetView, NULL);
 		}
 
-		static const ImWchar icons_ranges[] = { 0xf000, 0xf3ff, 0 };
-		ImFontConfig icons_config;
-		icons_config.MergeMode = true;
-		icons_config.PixelSnapH = true;
-		icons_config.OversampleH = (int)2.5;
-		icons_config.OversampleV = (int)2.5;
-
-		ImGui::GetIO().Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\verdana.ttf", 16);
-		ImGui::GetIO().Fonts->AddFontFromMemoryCompressedTTF(font_awesome_data, font_awesome_size, 16.0f, &icons_config, icons_ranges);
 		ImGui_ImplWin32_NewFrame();
 		ImGui_ImplDX11_NewFrame();
 		ImGui::NewFrame();
